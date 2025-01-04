@@ -26,7 +26,7 @@ BLURRED_BACKGROUND_VID = 'Presets'+r'/blurred_minecraft_gameplay.mp4'
 VIDEO_START_TIME = None
 chat_data = None
 
-nltk.download('vader_lexicon', download_dir='nltk_data')
+nltk.download('vader_lexicon', download_dir='myenv/nltk_data')
 sia = SentimentIntensityAnalyzer()
 
 client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
