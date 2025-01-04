@@ -1,0 +1,10 @@
+.vscode
+highlights
+Presets
+.env
+client_secrets.json
+kaicenat_chat_log.csv
+kaicenat_recorded_stream.mp4
+plaqueboymax_chat_log.csv
+plaqueboymax_recorded_stream.mp4
+upload_video.py-oauth2.json
