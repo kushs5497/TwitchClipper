@@ -15,6 +15,8 @@ TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelri
 VIDEO_OUTPUT_FILE = "recorded_stream.mp4"
 CHAT_LOG_FILE = f"{TWITCH_CHANNEL}_chat_log.csv"
 EASTERN_TIMEZONE = pytz.timezone('US/Eastern')
+VIDEO_START_TIME = None
+VIDEO_LEN = None
 
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
@@ -33,6 +35,7 @@ def record_stream():
     subprocess.run(command, shell=True)  # Block until streamlink exits
 
     print("Stream recording stopped.")
+    VIDEO_LEN = (datetime.now(EASTERN_TIMEZONE) - VIDEO_START_TIME).total_seconds()
     stop_event.set()  # Signal all threads to stop
 
 
@@ -108,9 +111,14 @@ def main():
         sock.close()
         print("Stream and chat logging finished.")
 
-        # Run clip_maker.py
-        print("Running clip_maker.py...")
-        subprocess.run(["python", "clip_maker.py"])
+        # Run clip_maker.py if VIDEO_LEN is not None and VIDEO_LEN > 60
+        if VIDEO_LEN and VIDEO_LEN > 60:
+            print("Running clip_maker.py...")
+            subprocess.run(["python", "clip_maker.py"])
+        else:
+            print("Stream duration is less than 60 seconds. Skipping clip_maker.py.")
+
+        print("Exiting...")
     else:
         print("Failed to connect to Twitch chat. Exiting...")
 
