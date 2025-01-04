@@ -1,20 +1,16 @@
 import os
-import sys
 import nltk
 import random
 import whisper
 import warnings
 import subprocess
-import numpy as np
 import pandas as pd
 from openai import OpenAI
 from datetime import timedelta
 from dotenv import load_dotenv
 from scipy.signal import find_peaks
-from matplotlib import pyplot as plt
 from moviepy.editor import VideoFileClip
 from scipy.ndimage import gaussian_filter1d
-from scipy.interpolate import make_interp_spline
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 load_dotenv()
