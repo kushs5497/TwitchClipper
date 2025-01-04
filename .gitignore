@@ -8,3 +8,7 @@ kaicenat_recorded_stream.mp4
 plaqueboymax_chat_log.csv
 plaqueboymax_recorded_stream.mp4
 upload_video.py-oauth2.json
+git_pat.txt
+myenv
+*_chat_log.csv
+*_recorded_stream.mp4

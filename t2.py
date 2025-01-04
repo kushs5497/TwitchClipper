@@ -113,6 +113,7 @@ def main():
 
         # Run clip_maker.py if VIDEO_LEN is not None and VIDEO_LEN > 60
         if VIDEO_LEN and VIDEO_LEN > 60:
+            
             print("Running clip_maker.py...")
             subprocess.run(["python", "clip_maker.py"])
         else:
