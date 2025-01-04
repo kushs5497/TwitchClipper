@@ -14,32 +14,30 @@ TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelri
 
 VIDEO_OUTPUT_FILE = "recorded_stream.mp4"
 CHAT_LOG_FILE = f"{TWITCH_CHANNEL}_chat_log.csv"
-HIGHLIGHTS_DIR = "highlights"
-VIDEO_START_TIME = None  # Will be set dynamically
 EASTERN_TIMEZONE = pytz.timezone('US/Eastern')
-CHAT_THREAD_STARTED = False
-chat_thread = None
 
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
 
 CHAT_QUEUE = Queue()
+stop_event = threading.Event()  # Shared stop event for thread coordination
+
 
 def record_stream():
+    """Records the Twitch stream using streamlink."""
     global VIDEO_START_TIME
     VIDEO_START_TIME = datetime.now(EASTERN_TIMEZONE)
 
     print(f"Recording stream from https://www.twitch.tv/{TWITCH_CHANNEL}...")
     command = f"streamlink https://www.twitch.tv/{TWITCH_CHANNEL} 720p60 -o {TWITCH_CHANNEL}_{VIDEO_OUTPUT_FILE} -f"
-    subprocess.run(command, shell=True)
+    subprocess.run(command, shell=True)  # Block until streamlink exits
 
     print("Stream recording stopped.")
+    stop_event.set()  # Signal all threads to stop
 
-    if CHAT_THREAD_STARTED:
-        chat_thread.join()
 
 def connect_to_twitch():
-    # Connects to the Twitch IRC server and joins a channel
+    """Connects to the Twitch IRC server and joins a channel."""
     try:
         sock = socket.socket()
         sock.connect((SERVER, PORT))
@@ -52,68 +50,66 @@ def connect_to_twitch():
         print(f"Error connecting to Twitch: {e}")
         return None
 
+
 def save_chat(sock):
-    # Reads messages from the Twitch chat and saves them to a CSV file
+    """Reads messages from Twitch chat and adds them to the queue."""
     print("Starting chat logging...")
-    while True:
-        try:
+    try:
+        while not stop_event.is_set():
             response = sock.recv(2048).decode("utf-8")
-            print(response)
             if response.startswith("PING"):
                 sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
-            elif len(response) > 0:
+            elif response.strip():
                 timestamp = datetime.now(EASTERN_TIMEZONE)
-                CHAT_QUEUE.put((timestamp, response))
-        except Exception as e:
-            print(f"\n\n\n\nError reading chat messages: {e}\n\n\n\n")
-            sock = connect_to_twitch()
-    
-    print(f"\n\n\n\nChat saving stopped.\n\n\n\n")
+                CHAT_QUEUE.put((timestamp, response.strip()))
+    except Exception as e:
+        print(f"Error reading chat messages: {e}")
+    finally:
+        print("Chat logging stopped.")
+
 
 def chat_logging():
-    while True:
+    """Logs chat messages to a CSV file."""
+    with open(CHAT_LOG_FILE, "w") as f:
+        f.write("timestamp,time_in_vid,message\n")
+
+    while not stop_event.is_set():
         if not CHAT_QUEUE.empty():
             timestamp, response = CHAT_QUEUE.get()
             time_in_video = (timestamp - VIDEO_START_TIME).total_seconds()
-            lines = response.strip().split("\n")  # Split by newline and clean up
-            
-            for line in response.strip().split("\n"):
-                if line.strip():  # Skip empty lines
-                    try:
-                        sanitized_line = line.replace(',', ' ').replace('  ', ' ')  # Clean up the message
-                        formatted_line = f"{timestamp},{time_in_video},{sanitized_line}\n"
-                        
-                        # Write to file with thread-safe lock
-                        with open(CHAT_LOG_FILE, "a") as f:
-                            f.write(formatted_line)
-                    except Exception as e:
-                        print(f"Error logging chat message: {e}")
-    print(f"\n\n\n\nChat logging stopped.\n\n\n\n")
+            try:
+                sanitized_line = response.replace(',', ' ').replace('  ', ' ')
+                formatted_line = f"{timestamp},{time_in_video},{sanitized_line}\n"
+                with open(CHAT_LOG_FILE, "a") as f:
+                    f.write(formatted_line)
+            except Exception as e:
+                print(f"Error logging chat message: {e}")
+
 
 def main():
+    """Main function to start and manage threads."""
     record_thread = threading.Thread(target=record_stream)
     record_thread.start()
 
     sock = connect_to_twitch()
     if sock:
-        with open(CHAT_LOG_FILE, "w") as f:
-            f.write("timestamp,time_in_vid,message\n")
-        
-        global chat_thread
         chat_thread = threading.Thread(target=save_chat, args=(sock,))
         chat_thread.start()
-        global CHAT_THREAD_STARTED
-        CHAT_THREAD_STARTED = True
 
         chat_logging_thread = threading.Thread(target=chat_logging)
         chat_logging_thread.start()
 
+        # Wait for the recording thread to finish
         record_thread.join()
+        stop_event.set()  # Signal all threads to stop
         chat_thread.join()
+        chat_logging_thread.join()
+
         sock.close()
-        print("Stream Finished")
+        print("Stream and chat logging finished.")
     else:
         print("Failed to connect to Twitch chat. Exiting...")
+
 
 if __name__ == "__main__":
     main()
