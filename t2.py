@@ -35,6 +35,7 @@ def record_stream():
     subprocess.run(command, shell=True)  # Block until streamlink exits
 
     print("Stream recording stopped.")
+    global VIDEO_LEN
     VIDEO_LEN = (datetime.now(EASTERN_TIMEZONE) - VIDEO_START_TIME).total_seconds()
     stop_event.set()  # Signal all threads to stop
 
@@ -59,7 +60,7 @@ def save_chat(sock):
     print("Starting chat logging...")
     try:
         while not stop_event.is_set():
-            response = sock.recv(2048).decode("utf-8")
+            response = sock.recv(2048).decode("utf-8", 'ignore')
             if response.startswith("PING"):
                 sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
             elif response.strip():
