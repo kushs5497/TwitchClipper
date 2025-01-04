@@ -187,6 +187,10 @@ def main():
     print("Generating Highlights...")
     # Read in the Chat Data and Clean
     print("Reading in Chat Data and Cleaning")
+    try:
+        chat_data = pd.read_csv(CHAT_LOG_FILE, parse_dates=["timestamp"])
+    except Exception as e:
+        print(f"Chat data not found, maybe stream didn't run: {e}")
     chat_data = pd.read_csv(CHAT_LOG_FILE, parse_dates=["timestamp"])
     chat_data["timestamp"] = pd.to_datetime(chat_data["timestamp"])
     VIDEO_START_TIME = pd.to_datetime(chat_data['timestamp']).loc[0]-timedelta(seconds=(chat_data['time_in_vid'].loc[0]))

@@ -107,6 +107,9 @@ def main():
 
         sock.close()
         print("Stream and chat logging finished.")
+
+        # Run clip_maker.py
+        subprocess.run(["python", "clip_maker.py"])
     else:
         print("Failed to connect to Twitch chat. Exiting...")
 
