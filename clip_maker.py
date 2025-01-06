@@ -1,16 +1,21 @@
 import os
+import sys
 import nltk
 import random
 import whisper
 import warnings
 import subprocess
+import numpy as np
 import pandas as pd
 from openai import OpenAI
+import matplotlib_terminal
 from datetime import timedelta
 from dotenv import load_dotenv
 from scipy.signal import find_peaks
+from matplotlib import pyplot as plt
 from moviepy.editor import VideoFileClip
 from scipy.ndimage import gaussian_filter1d
+from scipy.interpolate import make_interp_spline
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 load_dotenv()
@@ -41,6 +46,37 @@ FREQUENCY_GAUSSIAN_SIGMA = 4
 SENTIMENT_GAUSSIAN_SIGMA = 4
 FREQUENCY_STD_COEF = 1
 SENTIMENT_STD_COEF = 2
+
+def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment):
+    # Interpolate for smoother lines
+    time_counts = chat_counts.index.astype('int64') // 1e9  # Convert to seconds for interpolation
+    time_sentiment = chat_sentiment.index.astype('int64') // 1e9  # Convert to seconds for interpolation
+    smooth_time_counts = np.linspace(time_counts.min(), time_counts.max(), 500)
+    smooth_time_sentiment = np.linspace(time_sentiment.min(), time_sentiment.max(), 500)
+    smooth_counts = make_interp_spline(time_counts, smoothed_counts)(smooth_time_counts)
+    smooth_sentiment = make_interp_spline(time_sentiment, smoothed_sentiment)(smooth_time_sentiment)
+
+    # Plot Peaks
+    plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-dark.mplstyle')
+    plt.figure(figsize=(12, 8), dpi=300)
+
+    plt.plot(chat_counts.index, chat_counts.values, label="Raw Chat Counts", alpha=0.5, color='gray')
+
+    plt.plot(pd.to_datetime(smooth_time_counts, unit='s'), smooth_counts, label="Smoothed Counts", linewidth=2)
+    plt.plot(pd.to_datetime(smooth_time_sentiment, unit='s'), smooth_sentiment * chat_counts.max(), label="Sentiment (Scaled)", linewidth=2)
+
+    plt.scatter(chat_counts.index[peaks_counts], smoothed_counts[peaks_counts], label="Detected Peaks (Counts)", color='red', zorder=3)
+    plt.scatter(chat_sentiment.index[peaks_sent], smoothed_sentiment[peaks_sent] * chat_counts.max(), label="Detected Peaks (Sentiment)", color='orange', zorder=3)
+
+    plt.title("Chat Activity Over Time", fontsize=16)
+    plt.xlabel("Time")
+    plt.ylabel("Number of Messages")
+    plt.legend()
+    plt.tight_layout()
+
+    plt.show()
+    plt.show('braille') # Use RendererGamma-fast/braille from img2unicode renderer
+
 
 def generate_title_and_description(min_time,max_time,transcript=None):
     min_time = VIDEO_START_TIME + timedelta(seconds=min_time)
@@ -175,8 +211,8 @@ def make_highlights(dir, peaks):
         upload_command = f'python3 upload_video.py --file="{output_file}" --title="{title_youtube} #shorts #twitch #{TWITCH_CHANNEL}" --description="{title_youtube} #twitch #{TWITCH_CHANNEL}" --keywords="twitch,shorts,{TWITCH_CHANNEL}" --category="23" --privacyStatus="public"'
         printable_uc = upload_command.replace('\n','\\n')
         print(f"\t\tRunning Command: {printable_uc} ...")
-        process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
-        print(f"\tVideo uploaded: {output_file}")
+        #process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
+        #print(f"\tVideo uploaded: {output_file}")
  
 
 def main():
@@ -209,6 +245,8 @@ def main():
     threshold_sent = chat_sentiment.mean() + SENTIMENT_STD_COEF * chat_sentiment.std()
     peaks_sent, _ = find_peaks(smoothed_sentiment, height=threshold_sent, distance=30)
     peak_times_sent = chat_sentiment.index[peaks_sent]
+
+    visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
 
     # Directory Names
     DIR = HIGHLIGHTS_DIR+r"/"+TWITCH_CHANNEL
