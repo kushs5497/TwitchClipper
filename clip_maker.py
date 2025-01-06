@@ -18,26 +18,21 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import make_interp_spline
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-load_dotenv()
-TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
-TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")  # OAuth token from Twitch
-TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+# Global Variables
+TWITCH_NICK = ""
+TWITCH_TOKEN = ""
+TWITCH_CHANNEL = ""
+DEEPSEEK_API_KEY = ""
 HIGHLIGHTS_DIR = "highlights"
-VIDEO_OUTPUT_FILE = f"{TWITCH_CHANNEL}_recorded_stream.mp4"
-CHAT_LOG_FILE = f"{TWITCH_CHANNEL}_chat_log.csv"
-DESC_SAVE_FILE = 'descriptions.csv'
-BLURRED_BACKGROUND_VID = 'Presets'+r'/blurred_minecraft_gameplay.mp4'
+VIDEO_OUTPUT_FILE = ""
+CHAT_LOG_FILE = ""
+DESC_SAVE_FILE = "descriptions.csv"
+BLURRED_BACKGROUND_VID = r'Presets/blurred_minecraft_gameplay.mp4'
 VIDEO_START_TIME = None
 chat_data = None
-
-nltk.download('vader_lexicon', download_dir='myenv/nltk_data')
-sia = SentimentIntensityAnalyzer()
-
-client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
-warnings.filterwarnings("ignore", category=FutureWarning)
-
-transcriber = whisper.load_model("base")
+sia = None
+client = None
+transcriber = None
 
 # Analysis Constants
 FREQUENCY_RESAMPLE_RATE = "1s"
@@ -46,6 +41,30 @@ FREQUENCY_GAUSSIAN_SIGMA = 4
 SENTIMENT_GAUSSIAN_SIGMA = 4
 FREQUENCY_STD_COEF = 1
 SENTIMENT_STD_COEF = 2
+
+def initialize():
+    load_dotenv()
+    TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
+    TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    HIGHLIGHTS_DIR = "highlights"
+    VIDEO_OUTPUT_FILE = f"{TWITCH_CHANNEL}_recorded_stream.mp4"
+    CHAT_LOG_FILE = f"{TWITCH_CHANNEL}_chat_log.csv"
+    DESC_SAVE_FILE = 'descriptions.csv'
+    BLURRED_BACKGROUND_VID = 'Presets'+r'/blurred_minecraft_gameplay.mp4'
+    VIDEO_START_TIME = None
+    chat_data = None
+
+    try:
+        sia = SentimentIntensityAnalyzer()
+    except:
+        nltk.download('vader_lexicon', download_dir='myenv/nltk_data')
+        sia = SentimentIntensityAnalyzer()
+
+    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
+    transcriber = whisper.load_model("base")
 
 def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment):
     # Interpolate for smoother lines
@@ -57,8 +76,8 @@ def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, s
     smooth_sentiment = make_interp_spline(time_sentiment, smoothed_sentiment)(smooth_time_sentiment)
 
     # Plot Peaks
-    plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-dark.mplstyle')
-    plt.figure(figsize=(12, 8), dpi=300)
+    #plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-dark.mplstyle')
+    plt.figure(figsize=(12, 8))
 
     plt.plot(chat_counts.index, chat_counts.values, label="Raw Chat Counts", alpha=0.5, color='gray')
 
@@ -74,7 +93,7 @@ def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, s
     plt.legend()
     plt.tight_layout()
 
-    plt.show()
+    #plt.show()
     plt.show('braille') # Use RendererGamma-fast/braille from img2unicode renderer
 
 
@@ -211,41 +230,31 @@ def make_highlights(dir, peaks):
         upload_command = f'python3 upload_video.py --file="{output_file}" --title="{title_youtube} #shorts #twitch #{TWITCH_CHANNEL}" --description="{title_youtube} #twitch #{TWITCH_CHANNEL}" --keywords="twitch,shorts,{TWITCH_CHANNEL}" --category="23" --privacyStatus="public"'
         printable_uc = upload_command.replace('\n','\\n')
         print(f"\t\tRunning Command: {printable_uc} ...")
-        #process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
-        #print(f"\tVideo uploaded: {output_file}")
+        process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
+        print(f"\tVideo uploaded: {output_file}")
  
 
 def main():
-    print("Generating Highlights...")
+    print("Higlights Maker Started") 
+
+    # Initialize
+    print("Initializing")
+    initialize()
+
     # Read in the Chat Data and Clean
     print("Reading in Chat Data and Cleaning")
-    chat_data = pd.read_csv(CHAT_LOG_FILE, parse_dates=["timestamp"])
-    chat_data = chat_data[(chat_data['message'].str.contains(f'#{TWITCH_CHANNEL} :').fillna(False))]
-    chat_data = chat_data[~(chat_data['message'].str.contains("kushs5497").fillna(True))]
-    chat_data['username'] = chat_data['message'].apply(lambda x: x.split(':')[1].split('!')[0])
-    chat_data['entire_contents'] = chat_data['message']
-    chat_data['message'] = chat_data['entire_contents'].apply(lambda x: x.split(f'#{TWITCH_CHANNEL} :')[1])
-    chat_data["timestamp"] = pd.to_datetime(chat_data["timestamp"])
-    VIDEO_START_TIME = pd.to_datetime(chat_data['timestamp']).iloc[0]-timedelta(seconds=(chat_data['time_in_vid'].iloc[0]))
+    chat_data = clean_chat_data()
 
     # Compute Frequency Peaks
     print("Computing Frequency Peaks")
-    chat_data["count"] = 1
-    chat_counts = chat_data.resample(FREQUENCY_RESAMPLE_RATE, on="timestamp").sum()["count"].fillna(0)
-    smoothed_counts = gaussian_filter1d(chat_counts.values, sigma=FREQUENCY_GAUSSIAN_SIGMA)
-    threshold_counts = chat_counts.mean() + FREQUENCY_STD_COEF * chat_counts.std()
-    peaks_counts, _ = find_peaks(smoothed_counts, height=threshold_counts, distance=30)
-    peak_times_freq = chat_counts.index[peaks_counts]
+    chat_counts, smoothed_counts, peaks_counts, peak_times_freq = compute_freq_peaks(chat_data)
 
     # Compute Sentiment Series
     print("Computing Sentiment Series")
-    chat_data["sentiment"] = chat_data["message"].apply(lambda x: sia.polarity_scores(x)["compound"]).abs()
-    chat_sentiment = chat_data.resample(SENTIMENT_RESAMPLE_RATE, on="timestamp").mean(numeric_only=True)["sentiment"].fillna(0)
-    smoothed_sentiment = gaussian_filter1d(chat_sentiment.values, sigma=SENTIMENT_GAUSSIAN_SIGMA)
-    threshold_sent = chat_sentiment.mean() + SENTIMENT_STD_COEF * chat_sentiment.std()
-    peaks_sent, _ = find_peaks(smoothed_sentiment, height=threshold_sent, distance=30)
-    peak_times_sent = chat_sentiment.index[peaks_sent]
+    chat_sentiment, smoothed_sentiment, peaks_sent, peak_times_sent = compute_sent_peaks(chat_data)
 
+    # Visualize Chat Data
+    print("Visualizing Chat Data")
     visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
 
     # Directory Names
@@ -257,6 +266,36 @@ def main():
     print("Making Highlights")
     make_highlights(FREQ_DIR,peak_times_freq)
     make_highlights(SENT_DIR,peak_times_sent)
+
+def compute_sent_peaks(chat_data):
+    print("Computing Sentiment Series")
+    chat_data["sentiment"] = chat_data["message"].apply(lambda x: sia.polarity_scores(x)["compound"]).abs()
+    chat_sentiment = chat_data.resample(SENTIMENT_RESAMPLE_RATE, on="timestamp").mean(numeric_only=True)["sentiment"].fillna(0)
+    smoothed_sentiment = gaussian_filter1d(chat_sentiment.values, sigma=SENTIMENT_GAUSSIAN_SIGMA)
+    threshold_sent = chat_sentiment.mean() + SENTIMENT_STD_COEF * chat_sentiment.std()
+    peaks_sent, _ = find_peaks(smoothed_sentiment, height=threshold_sent, distance=30)
+    peak_times_sent = chat_sentiment.index[peaks_sent]
+    return chat_sentiment,smoothed_sentiment,peaks_sent,peak_times_sent
+
+def compute_freq_peaks(chat_data):
+    chat_data["count"] = 1
+    chat_counts = chat_data.resample(FREQUENCY_RESAMPLE_RATE, on="timestamp").sum()["count"].fillna(0)
+    smoothed_counts = gaussian_filter1d(chat_counts.values, sigma=FREQUENCY_GAUSSIAN_SIGMA)
+    threshold_counts = chat_counts.mean() + FREQUENCY_STD_COEF * chat_counts.std()
+    peaks_counts, _ = find_peaks(smoothed_counts, height=threshold_counts, distance=30)
+    peak_times_freq = chat_counts.index[peaks_counts]
+    return chat_counts,smoothed_counts,peaks_counts,peak_times_freq
+
+def clean_chat_data():
+    chat_data = pd.read_csv(CHAT_LOG_FILE, parse_dates=["timestamp"])
+    chat_data = chat_data[(chat_data['message'].str.contains(f'#{TWITCH_CHANNEL} :').fillna(False))]
+    chat_data = chat_data[~(chat_data['message'].str.contains("kushs5497").fillna(True))]
+    chat_data['username'] = chat_data['message'].apply(lambda x: x.split(':')[1].split('!')[0])
+    chat_data['entire_contents'] = chat_data['message']
+    chat_data['message'] = chat_data['entire_contents'].apply(lambda x: x.split(f'#{TWITCH_CHANNEL} :')[1])
+    chat_data["timestamp"] = pd.to_datetime(chat_data["timestamp"])
+    VIDEO_START_TIME = pd.to_datetime(chat_data['timestamp']).iloc[0]-timedelta(seconds=(chat_data['time_in_vid'].iloc[0]))
+    return chat_data
 
 if __name__ == "__main__":
     main()
