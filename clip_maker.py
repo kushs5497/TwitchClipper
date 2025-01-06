@@ -255,8 +255,8 @@ def main():
     chat_sentiment, smoothed_sentiment, peaks_sent, peak_times_sent = compute_sent_peaks(chat_data)
 
     # Visualize Chat Data
-    print("Visualizing Chat Data")
-    visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
+    #print("Visualizing Chat Data")
+    #visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
 
     # Directory Names
     DIR = HIGHLIGHTS_DIR+r"/"+TWITCH_CHANNEL
