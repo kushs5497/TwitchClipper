@@ -1,21 +1,41 @@
+print("importing modules...")
+print("\tos")
 import os
+print("\tsys")
 import sys
+print("\tnltk")
 import nltk
+print("\trandom")
 import random
+print("\twhisper")
 import whisper
+print("\twarnings")
 import warnings
+print("\tsubprocess")
 import subprocess
+print("\tnumpy")
 import numpy as np
+print("\tpandas")
 import pandas as pd
+print("\topenai")
 from openai import OpenAI
+print("\tmatplotlib_terminal")
 import matplotlib_terminal
+print("\tdatetime: timedelta")
 from datetime import timedelta
+print("\tdotenv: load_dotenv")
 from dotenv import load_dotenv
+print("\tscipy.signal: find_peaks")
 from scipy.signal import find_peaks
+print("\tmatplotlib: pyplot as plt")
 from matplotlib import pyplot as plt
+print("\tmoviepy.editor: VideoFileClip")
 from moviepy.editor import VideoFileClip
+print("\tscipy.ndimage: gaussian_filter1d")
 from scipy.ndimage import gaussian_filter1d
+print("\tscipy.interpolate: make_interp_spline")
 from scipy.interpolate import make_interp_spline
+print("\tnltk.sentiment: SentimentIntensityAnalyzer")
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 # Global Variables
@@ -231,8 +251,8 @@ def make_highlights(dir, peaks):
         upload_command = f'python3 upload_video.py --file="{output_file}" --title="{title_youtube} #shorts #twitch #{TWITCH_CHANNEL}" --description="{title_youtube} #twitch #{TWITCH_CHANNEL}" --keywords="twitch,shorts,{TWITCH_CHANNEL}" --category="23" --privacyStatus="public"'
         printable_uc = upload_command.replace('\n','\\n')
         print(f"\t\tRunning Command: {printable_uc} ...")
-        process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
-        print(f"\tVideo uploaded: {output_file}")
+        #process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
+        #print(f"\tVideo uploaded: {output_file}")
  
 
 def main():
@@ -264,7 +284,7 @@ def main():
     SENT_DIR = DIR+r"/sent"
 
     # Make Highlights
-    print("Making Highlights")
+    print(f"Making {len(peak_times_freq)} Frequency Highlights and {len(peak_times_sent)} Sentiment Highlights")
     make_highlights(FREQ_DIR,peak_times_freq)
     make_highlights(SENT_DIR,peak_times_sent)
 
