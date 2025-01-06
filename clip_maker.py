@@ -44,6 +44,7 @@ SENTIMENT_STD_COEF = 2
 
 def initialize():
     load_dotenv()
+    global TWITCH_NICK, TWITCH_CHANNEL, DEEPSEEK_API_KEY, HIGHLIGHTS_DIR, VIDEO_OUTPUT_FILE, CHAT_LOG_FILE, DESC_SAVE_FILE, BLURRED_BACKGROUND_VID, VIDEO_START_TIME, chat_data, sia, client, transcriber
     TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
     TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
