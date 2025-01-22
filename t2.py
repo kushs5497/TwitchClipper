@@ -66,6 +66,8 @@ def save_chat(sock):
             elif response.strip():
                 timestamp = datetime.now(EASTERN_TIMEZONE)
                 CHAT_QUEUE.put((timestamp, response.strip()))
+            else:
+                sock.send(":tmi.twitch.tv RECONNECT\r\n".encode("utf-8"))
     except Exception as e:
         print(f"Error reading chat messages: {e}")
     finally:
