@@ -12,3 +12,5 @@ git_pat.txt
 myenv
 *_chat_log.csv
 *_recorded_stream.mp4
+venv
+yt_dl
