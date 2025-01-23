@@ -20,7 +20,7 @@ import pandas as pd
 print("\topenai")
 from openai import OpenAI
 print("\tmatplotlib_terminal")
-import matplotlib_terminal
+#import matplotlib_terminal
 print("\tdatetime: timedelta")
 from datetime import timedelta
 print("\tdotenv: load_dotenv")
@@ -273,6 +273,14 @@ def main():
     # Compute Sentiment Series
     print("Computing Sentiment Series")
     chat_sentiment, smoothed_sentiment, peaks_sent, peak_times_sent = compute_sent_peaks(chat_data)
+
+    # Printing Peak Times
+    print("Peak Times for Frequency:")
+    for peak in peak_times_freq:
+        print(f"\t{peak}")
+    print("Peak Times for Sentiment:")
+    for peak in peak_times_sent:
+        print(f"\t{peak}")
 
     # Visualize Chat Data
     #print("Visualizing Chat Data")
