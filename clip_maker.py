@@ -316,6 +316,7 @@ def compute_freq_peaks(chat_data):
     return chat_counts,smoothed_counts,peaks_counts,peak_times_freq
 
 def clean_chat_data():
+    global chat_data
     chat_data = pd.read_csv(CHAT_LOG_FILE, parse_dates=["timestamp"])
     chat_data = chat_data[(chat_data['message'].str.contains(f'#{TWITCH_CHANNEL} :').fillna(False))]
     chat_data = chat_data[~(chat_data['message'].str.contains("kushs5497").fillna(True))]
