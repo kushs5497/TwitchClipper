@@ -323,6 +323,7 @@ def clean_chat_data():
     chat_data['entire_contents'] = chat_data['message']
     chat_data['message'] = chat_data['entire_contents'].apply(lambda x: x.split(f'#{TWITCH_CHANNEL} :')[1])
     chat_data["timestamp"] = pd.to_datetime(chat_data["timestamp"])
+    global VIDEO_START_TIME
     VIDEO_START_TIME = pd.to_datetime(chat_data['timestamp']).iloc[0]-timedelta(seconds=(chat_data['time_in_vid'].iloc[0]))
     return chat_data
 
