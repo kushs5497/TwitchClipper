@@ -79,7 +79,7 @@ def initialize():
     try:
         sia = SentimentIntensityAnalyzer()
     except:
-        nltk.download('vader_lexicon', download_dir='myenv/nltk_data')
+        nltk.download('vader_lexicon', download_dir='venv/nltk_data')
         sia = SentimentIntensityAnalyzer()
 
     client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
