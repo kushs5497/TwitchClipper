@@ -39,11 +39,19 @@ def record_stream():
 
     print(f"Recording stream from https://www.twitch.tv/{TWITCH_CHANNEL} ...")
     command = f"streamlink https://www.twitch.tv/{TWITCH_CHANNEL} 720p60 -o {TWITCH_CHANNEL}_{VIDEO_OUTPUT_FILE} -f"
-    subprocess.run(command, shell=True)  # Block until streamlink exits
-
-    print("Stream recording stopped.")
-    global VIDEO_LEN
-    VIDEO_LEN = (datetime.now(EASTERN_TIMEZONE) - VIDEO_START_TIME).total_seconds()
+    try:
+        process = subprocess.Popen(command, shell=True)
+        process.wait()
+        
+        print("Stream recording stopped.")
+        global VIDEO_LEN
+        VIDEO_LEN = (datetime.now(EASTERN_TIMEZONE) - VIDEO_START_TIME).total_seconds()
+        
+    except KeyboardInterrupt:
+        print("\nReceived keyboard interrupt - stopping recording...")
+        process.terminate()
+        stop_event.set()
+        return
     print(f"Recorded stream length: {VIDEO_LEN} seconds.")
     stop_event.set()  # Signal all threads to stop
 
@@ -113,11 +121,15 @@ def main():
         chat_logging_thread = threading.Thread(target=chat_logging)
         chat_logging_thread.start()
 
-        # Wait for the recording thread to finish
-        record_thread.join()
-        stop_event.set()  # Signal all threads to stop
-        chat_thread.join()
-        chat_logging_thread.join()
+        try:
+            # Wait for the recording thread to finish
+            record_thread.join()
+        except KeyboardInterrupt:
+            print("\nReceived keyboard interrupt - stopping all threads...")
+        finally:
+            stop_event.set()  # Signal all threads to stop
+            chat_thread.join(timeout=1)
+            chat_logging_thread.join(timeout=1)
 
         sock.close()
         print("Stream and chat logging finished.")
