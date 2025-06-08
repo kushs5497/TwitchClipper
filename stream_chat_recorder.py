@@ -39,9 +39,14 @@ def record_stream():
 
     print(f"Recording stream from https://www.twitch.tv/{TWITCH_CHANNEL} ...")
     command = f"streamlink https://www.twitch.tv/{TWITCH_CHANNEL} 720p60 -o {TWITCH_CHANNEL}_{VIDEO_OUTPUT_FILE} -f"
-    subprocess.run(command, shell=True)  # Block until streamlink exits
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)  # Block until streamlink exits
 
     print("Stream recording stopped.")
+    if "No playable streams found" in result.stderr:
+        print("No stream found - exiting.")
+        stop_event.set()
+        return
+    
     global VIDEO_LEN
     VIDEO_LEN = (datetime.now(EASTERN_TIMEZONE) - VIDEO_START_TIME).total_seconds()
     stop_event.set()  # Signal all threads to stop
