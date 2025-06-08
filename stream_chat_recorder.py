@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--channel', help='Twitch channel to record', required=False)
+parser.add_argument('channel', help='Twitch channel to record')
 args = parser.parse_args()
 
 load_dotenv()
@@ -124,8 +124,8 @@ def main():
         # Run clip_maker.py if VIDEO_LEN is not None and VIDEO_LEN > 60
         if VIDEO_LEN and VIDEO_LEN > 60:
             
-            print("Running clip_maker.py...")
-            subprocess.run(["python", "clip_maker.py"])
+            print(f"Running clip_maker.py for channel {TWITCH_CHANNEL}...")
+            subprocess.run(["python", "clip_maker.py", "--channel", TWITCH_CHANNEL])
         else:
             print("Stream duration is less than 60 seconds. Skipping clip_maker.py.")
 

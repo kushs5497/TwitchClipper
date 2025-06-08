@@ -65,7 +65,7 @@ SENTIMENT_STD_COEF = 2
 def initialize():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--channel', help='Twitch channel to make clips from', required=False)
+    parser.add_argument('--channel', help='Twitch channel to make clips from', required=True)
     args = parser.parse_args()
 
     load_dotenv()
