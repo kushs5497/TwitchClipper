@@ -8,6 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
+load_dotenv(override=True)
 TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
 TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")  # OAuth token from Twitch
 TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
@@ -30,7 +31,7 @@ def record_stream():
     global VIDEO_START_TIME
     VIDEO_START_TIME = datetime.now(EASTERN_TIMEZONE)
 
-    print(f"Recording stream from https://www.twitch.tv/{TWITCH_CHANNEL}...")
+    print(f"Recording stream from https://www.twitch.tv/{TWITCH_CHANNEL} ...")
     command = f"streamlink https://www.twitch.tv/{TWITCH_CHANNEL} 720p60 -o {TWITCH_CHANNEL}_{VIDEO_OUTPUT_FILE} -f"
     subprocess.run(command, shell=True)  # Block until streamlink exits
 

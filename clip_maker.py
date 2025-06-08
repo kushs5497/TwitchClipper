@@ -251,7 +251,7 @@ def make_highlights(dir, peaks):
         upload_command = f'python3 upload_video.py --file="{output_file}" --title="{title_youtube} #shorts #twitch #{TWITCH_CHANNEL}" --description="{title_youtube} #twitch #{TWITCH_CHANNEL}" --keywords="twitch,shorts,{TWITCH_CHANNEL}" --category="23" --privacyStatus="public"'
         printable_uc = upload_command.replace('\n','\\n')
         print(f"\t\tRunning Command: {printable_uc} ...")
-        #process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
+        process = subprocess.run(upload_command, shell=True, capture_output=False, text=True)
         #print(f"\tVideo uploaded: {output_file}")
  
 
@@ -295,6 +295,10 @@ def main():
     print(f"Making {len(peak_times_freq)} Frequency Highlights and {len(peak_times_sent)} Sentiment Highlights")
     make_highlights(FREQ_DIR,peak_times_freq)
     make_highlights(SENT_DIR,peak_times_sent)
+
+    print("Higlights Maker Finished")
+    # Cleanup
+    
 
 def compute_sent_peaks(chat_data):
     print("Computing Sentiment Series")
