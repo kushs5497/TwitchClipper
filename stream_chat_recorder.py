@@ -3,15 +3,21 @@ import pytz
 import socket
 import subprocess
 import threading
+import argparse
 from queue import Queue
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--channel', help='Twitch channel to record', required=False)
+args = parser.parse_args()
 
 load_dotenv()
 load_dotenv(override=True)
 TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
 TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")  # OAuth token from Twitch
-TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
+TWITCH_CHANNEL = args.channel if args.channel else os.getenv("TWITCH_CHANNEL")  # Channel from arg or .env
 
 VIDEO_OUTPUT_FILE = "recorded_stream.mp4"
 CHAT_LOG_FILE = f"{TWITCH_CHANNEL}_chat_log.csv"

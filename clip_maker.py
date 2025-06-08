@@ -63,10 +63,15 @@ FREQUENCY_STD_COEF = 2
 SENTIMENT_STD_COEF = 2
 
 def initialize():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--channel', help='Twitch channel to make clips from', required=False)
+    args = parser.parse_args()
+
     load_dotenv()
     global TWITCH_NICK, TWITCH_CHANNEL, DEEPSEEK_API_KEY, HIGHLIGHTS_DIR, VIDEO_OUTPUT_FILE, CHAT_LOG_FILE, DESC_SAVE_FILE, BLURRED_BACKGROUND_VID, VIDEO_START_TIME, chat_data, sia, client, transcriber
     TWITCH_NICK = os.getenv("TWITCH_NICK")  # Twitch username
-    TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL")  # Channel to join (e.g., "marvelrivals")
+    TWITCH_CHANNEL = args.channel if args.channel else os.getenv("TWITCH_CHANNEL")  # Channel from arg or .env
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
     HIGHLIGHTS_DIR = "highlights"
     VIDEO_OUTPUT_FILE = f"{TWITCH_CHANNEL}_recorded_stream.mp4"
