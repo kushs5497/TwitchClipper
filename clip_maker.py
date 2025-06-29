@@ -1,3 +1,4 @@
+# clip_maker.py
 print("importing modules...")
 print("\tos")
 import os
@@ -57,9 +58,9 @@ transcriber = None
 # Analysis Constants
 FREQUENCY_RESAMPLE_RATE = "1s"
 SENTIMENT_RESAMPLE_RATE = "1s"
-FREQUENCY_GAUSSIAN_SIGMA = 2
+FREQUENCY_GAUSSIAN_SIGMA = 1
 SENTIMENT_GAUSSIAN_SIGMA = 2
-FREQUENCY_STD_COEF = 2
+FREQUENCY_STD_COEF = 1.5
 SENTIMENT_STD_COEF = 2
 
 def initialize():
@@ -102,7 +103,6 @@ def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, s
     smooth_sentiment = make_interp_spline(time_sentiment, smoothed_sentiment)(smooth_time_sentiment)
 
     # Plot Peaks
-    #plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-dark.mplstyle')
     plt.figure(figsize=(12, 8))
 
     plt.plot(chat_counts.index, chat_counts.values, label="Raw Chat Counts", alpha=0.5, color='gray')
@@ -119,8 +119,9 @@ def visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, s
     plt.legend()
     plt.tight_layout()
 
-    #plt.show()
-    plt.show('braille') # Use RendererGamma-fast/braille from img2unicode renderer
+    # Save the plot to a PNG file
+    plt.savefig("chat_activity_plot.png")
+    
 
 
 def generate_title_and_description(min_time,max_time,transcript=None):
@@ -288,9 +289,9 @@ def main():
         print(f"\t{peak}")
 
     # Visualize Chat Data
-    #print("Visualizing Chat Data")
-    #visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
-
+    print("Visualizing Chat Data")
+    visualize_chat_data(chat_counts, chat_sentiment, peaks_counts, peaks_sent, smoothed_counts, smoothed_sentiment)
+    
     # Directory Names
     DIR = HIGHLIGHTS_DIR+r"/"+TWITCH_CHANNEL
     FREQ_DIR = DIR+r"/freq"
