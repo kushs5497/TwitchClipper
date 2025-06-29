@@ -1,7 +1,7 @@
 .vscode
 highlights
 Presets
-.env
+*.env
 client_secrets.json
 kaicenat_chat_log.csv
 kaicenat_recorded_stream.mp4
